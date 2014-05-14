@@ -1,5 +1,4 @@
-require 'public_suffix'
-require 'action_interceptor/interceptor'
+require 'action_interceptor/encryptor'
 
 module ActionInterceptor
   module Controller
@@ -13,12 +12,14 @@ module ActionInterceptor
     protected
 
     def redirect_to(options = {}, response_status = {})
-      # Send the referer with intercepted requests
-      # So we don't rely on the browser to do it for us
-      if @intercepted_url_key
+      if @interception_enabled
+        # Send the referer with intercepted requests
+        # So we don't rely on the user's browser to do it for us
+
+        key = ActionInterceptor.intercepted_url_key
         # Can't redirect back to non-get
-        intercepted_url = request.get? ? current_url : root_url
-        intercepted_url_hash = {@intercepted_url_key => intercepted_url}
+        url = Encryptor.encrypt_and_sign(request.get? ? current_url : root_url)
+        intercepted_url_hash = {key => url}
 
         if options.is_a? Hash
           options = intercepted_url_hash.merge(options)
@@ -39,56 +40,33 @@ module ActionInterceptor
       url.blank? || URI(url).path == request.path
     end
 
-    def local_url?(url)
-      # Blank is local
-      return true if url.blank?
-
-      url_host = URI(url).host
-      request_host = request.host
-
-      # Looking up the domain on the Public Suffix List is necessary to handle
-      # servers in multiple subdomains
-      begin
-        PublicSuffix.parse(url_host).domain == PublicSuffix.parse(request_host).domain
-      rescue PublicSuffix::DomainInvalid
-        # We most likely got here because we are using IP addresses instead of
-        # named hosts (dev environment). So just do a direct comparison.
-        url_host == request_host
-      end
-    end
-
     module ClassMethods
 
-      def intercept_with(controller, interceptor_name, options = {}, &block)
-        controller = controller.to_s if controller.is_a? Symbol
-        controller = controller.classify.constantize if controller.is_a? String
-        interceptor = Interceptor.get(controller, interceptor_name)
+      def interception(interceptor_name, options = {}, &block)
+        interceptor = ActionInterceptor.interceptors[interceptor_name]
+        key = ActionInterceptor.intercepted_url_key
 
-        key = interceptor[:intercepted_url_key]
         fname = options.delete(:filter_name) || interceptor[:filter_name]
         block ||= interceptor[:block]
 
         before_filter fname, options
 
         define_method fname do
-          @intercepted_url_key = key
           begin
+            @interception_enabled = true
             # Execute the block as if it was defined in this controller
             block.bind(self).call
           ensure
-            @intercepted_url_key = nil
+            @interception_enabled = nil
           end
         end
       end
 
-      def skip_intercept_with(controller, interceptor_name, options = {})
+      def skip_interception(interceptor_name, options = {})
         fname = options.delete(:filter_name)
         
         unless fname
-          controller = controller.to_s if controller.is_a? Symbol
-          controller = controller.classify.constantize if controller.is_a? String
-
-          fname = controller.get_interceptor(interceptor_name)[:filter_name]
+          fname = ActionInterceptor.interceptors[interceptor_name][:filter_name]
         end
 
         skip_before_filter fname, options
@@ -102,54 +80,38 @@ module ActionInterceptor
 
           helper_method :intercepted_url
 
-          def self.add_interceptor(interceptor_name, options = {}, &block)
-            Interceptor.add(self, interceptor_name, options, &block)
-          end
-
-          def self.get_interceptor(interceptor_name)
-            Interceptor.get(self, interceptor_name)
-          end
-
           def url_options
             return @interceptor_url_options if @interceptor_url_options
 
-            @interceptor_url_options = {}
-            Interceptor.get_all(self).each do |interceptor_name, interceptor|
-              intercepted_url = intercepted_url(interceptor_name)
-              next unless intercepted_url
-              intercepted_url_key = interceptor[:intercepted_url_key]
-              @interceptor_url_options.merge!(
-                {intercepted_url_key => intercepted_url})
+            url = Encryptor.encrypt_and_sign(intercepted_url)
+            key = ActionInterceptor.intercepted_url_key
+            @interceptor_url_options = {key => url}.merge(super)
+          end
+
+          def intercepted_url
+            return @intercepted_url if @intercepted_url
+
+            key = ActionInterceptor.intercepted_url_key
+            begin
+              # URL params are the most reliable, as they preserve
+              # state even if the user presses the back button
+              # Prevent Open Redirect vulnerability
+              @intercepted_url ||= Encryptor.decrypt_and_verify(params[key])
+            rescue ActiveSupport::MessageVerifier::InvalidSignature
+              # If the param is not available, take our best guess
+              # Session, referer and root are safe
+              @intercepted_url ||= session[key] || request.referer || root_url
             end
+            session[key] = @intercepted_url
+            @intercepted_url
           end
 
-          def intercepted_url(interceptor_name)
-            @intercepted_urls ||= {}
-            return @intercepted_urls[interceptor_name] \
-              if @intercepted_urls[interceptor_name]
-
-            key = self.class.get_interceptor(
-                    interceptor_name)[:intercepted_url_key]
-            unsafe_intercepted_url = params[key] || session[key] ||\
-                                     request.referer || root_url
-            session[key] = unsafe_intercepted_url
-
-            # Only local return urls are allowed
-            # Will point to root if non-local
-            @intercepted_urls[interceptor_name] = \
-              local_url?(unsafe_intercepted_url) ? \
-                unsafe_intercepted_url : root_url
-          end
-
-          def redirect_from_interception(interceptor_name, options = {})
-            intercepted_url = intercepted_url(interceptor_name)
+          def redirect_back(options = {})
+            url = intercepted_url
 
             # Prevent self redirect
-            redirect_to (current_page?(intercepted_url) ? \
-                          root_url : intercepted_url), options
+            redirect_to (current_page?(url) ? root_url : url), options
           end
-
-          alias_method :redirect_from, :redirect_from_interception
 
         end
       end
