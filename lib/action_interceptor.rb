@@ -1,5 +1,4 @@
 require 'action_interceptor/engine'
-require 'action_interceptor/interceptor'
 
 module ActionInterceptor
   mattr_reader :intercepted_url_key
@@ -13,9 +12,8 @@ module ActionInterceptor
     @interceptors ||= {}
   end
 
-  def self.interceptor(interceptor_name, filter_name = nil, &block)
-    i = Interceptor.new(interceptor_name, filter_name, &block)
-    interceptors.merge!({interceptor_name => i})
+  def self.interceptor(interceptor_name, &block)
+    interceptors.merge!({interceptor_name => block})
   end
 
   def self.configure(&block)
