@@ -92,12 +92,21 @@ module ActionInterceptor
 
           helper_method :intercepted_url
 
+          alias_method :url_options_without_interceptor, :url_options
+
           def url_options
             return @interceptor_url_options if @interceptor_url_options
 
             url = Encryptor.encrypt_and_sign(intercepted_url)
             key = ActionInterceptor.intercepted_url_key
             @interceptor_url_options = {key => url}.merge(super)
+          end
+
+          def without_interceptor_url_options(&block)
+            url_options_with_interceptor = url_options
+            @interceptor_url_options = url_options_without_interceptor
+            yield block
+            @interceptor_url_options = url_options_with_interceptor
           end
 
           def intercepted_url
@@ -110,7 +119,7 @@ module ActionInterceptor
               # Prevent Open Redirect vulnerability
               @intercepted_url = Encryptor.decrypt_and_verify(params[key])
             rescue ActiveSupport::MessageVerifier::InvalidSignature
-              # If the param is not available, take our best guess
+              # If the param is not available, use our best guess
               # Session and referer are safe for redirects (for that user)
               # Also, can't call root_url here, so use '/' instead
               @intercepted_url = session[key] || request.referer || '/'
