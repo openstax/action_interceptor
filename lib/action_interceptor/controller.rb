@@ -38,8 +38,8 @@ module ActionInterceptor
       begin
         # Send the referer with intercepted requests
         # So we don't rely on the user's browser to do it for us
-        default_url_options = @original_default_url_options
-                                .merge(encrypted_url_hash)
+        self.default_url_options = @original_default_url_options
+                                     .merge(encrypted_url_hash)
 
         # Execute the block as if it was defined in this controller
         instance_exec &block
@@ -48,7 +48,7 @@ module ActionInterceptor
         # and return the given value
         e.exit_value
       ensure
-        default_url_options = @original_default_url_options
+        self.default_url_options = @original_default_url_options
       end
     end
 
