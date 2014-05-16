@@ -28,7 +28,8 @@ module ActionInterceptor
       key = ActionInterceptor.intercepted_url_key
 
       # Can't redirect back to non-get
-      url = Encryptor.encrypt_and_sign(request.get? ? current_url : root_url)
+      # Also, can't call root_url here, so use '/' instead
+      url = Encryptor.encrypt_and_sign(request.get? ? current_url : '/')
       @current_url_hash = {key => url}
     end
 
@@ -104,10 +105,16 @@ module ActionInterceptor
 
           def without_interceptor_url_options(&block)
             url_options_with_interceptor = url_options
-            @interceptor_url_options = url_options_without_interceptor
-            yield block
-            @interceptor_url_options = url_options_with_interceptor
+
+            begin
+              @interceptor_url_options = url_options_without_interceptor
+              yield block
+            ensure
+              @interceptor_url_options = url_options_with_interceptor
+            end
           end
+
+          alias_method :without_interceptor, :without_interceptor_url_options
 
           def intercepted_url
             return @intercepted_url if @intercepted_url
@@ -133,11 +140,14 @@ module ActionInterceptor
           def redirect_back(options = {})
             url = intercepted_url
 
-            # Convert '/' back to root_url
-            # Also, prevent self redirects
-            url = root_url if url == '/' || current_page?(url)
+            # Disable the return_to param
+            without_interceptor_url_options do
+              # Convert '/' back to root_url
+              # Also, prevent self redirects
+              url = root_url if url == '/' || current_page?(url)
 
-            redirect_to url, options
+              redirect_to url, options
+            end
           end
 
         end
