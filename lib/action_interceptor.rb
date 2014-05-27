@@ -2,13 +2,13 @@ require 'action_interceptor/engine'
 
 module ActionInterceptor
   def self.intercepted_url_key(key = nil)
-    return @intercepted_url_key || :r if key.nil?
-    @intercepted_url_key = key
+    @intercepted_url_key = key unless key.blank?
+    @intercepted_url_key || :r
   end
 
   def self.override_url_options(bool = nil)
-    return @override_url_options if bool.nil?
-    @override_url_options = bool
+    @override_url_options = bool unless bool.nil?
+    @override_url_options.nil? ? true : @override_url_options
   end
 
   def self.interceptors

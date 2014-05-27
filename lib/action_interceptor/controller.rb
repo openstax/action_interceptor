@@ -88,7 +88,13 @@ module ActionInterceptor
         return if is_interceptor
         self.is_interceptor = true
 
+        @override_url_options = options[:override_url_options].nil? ? \
+                                  ActionInterceptor.override_url_options : \
+                                  options[:override_url_options]
+
         class_eval do
+
+          attr_writer :intercepted_url
 
           helper_method :intercepted_url
 
@@ -99,7 +105,7 @@ module ActionInterceptor
             begin
               # URL params are the most reliable, as they preserve
               # state even if the user presses the back button
-              # Prevent Open Redirect vulnerability
+              # We need to sign them to prevent the Open Redirect vulnerability
               @intercepted_url = Encryptor.decrypt_and_verify(params[key])
             rescue ActiveSupport::MessageVerifier::InvalidSignature
               # If the param is not available, use our best guess
@@ -132,8 +138,7 @@ module ActionInterceptor
           end
 
           alias_method :url_options, :url_options_with_interceptor \
-            unless !options[:override_url_options].nil? && \
-                   !options[:override_url_options]
+            unless !@override_url_options.nil? && !@override_url_options
 
           def without_interceptor(&block)
             previous_url_options = url_options_with_interceptor

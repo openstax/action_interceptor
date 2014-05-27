@@ -4,7 +4,6 @@ ActionInterceptor.configure do
   override_url_options true
 
   interceptor :registration do
-    redirect_to registration_path unless true
   end
 
   interceptor :my_interceptor do
