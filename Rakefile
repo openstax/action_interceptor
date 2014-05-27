@@ -12,7 +12,7 @@ Bundler::GemHelper.install_tasks
 
 require 'rake/testtask'
 
-Rake::TestTask.new(:spec => 'app:db:test:prepare') do |t|
+Rake::TestTask.new(:spec) do |t|
   t.libs << 'lib'
   t.libs << 'spec'
   t.pattern = 'spec/**/*_spec.rb'

@@ -64,7 +64,7 @@ to your `ApplicationController`:
 ```rb
 class ApplicationController < ActionController::Base
 
-  interception :registration
+  interceptor :registration
 
 end
 ```
@@ -77,13 +77,13 @@ class RegistrationsController < ApplicationController
 
   acts_as_interceptor
 
-  skip_interception :registration, only: [:new, :create]
+  skip_interceptor :registration, only: [:new, :create]
 
 end
 ```
 
 As shown above, interceptions work like before_filters and
-can be skipped using the skip_interception method.
+can be skipped using the skip_interceptor method.
 
 The `acts_as_interceptor` method will ensure the following:
 
@@ -96,8 +96,8 @@ The `acts_as_interceptor` method will ensure the following:
 
 - The following convenience methods will be added to the controller:
   `redirect_back(options = {})`, `intercepted_url`, `intercepted_url_hash`,
-  `without_interception(&block)`, `url_options_without_interception` and
-  `url_options_with_interception`. These methods do the following:
+  `without_interceptor(&block)`, `url_options_without_interceptor` and
+  `url_options_with_interceptor`. These methods do the following:
 
   - redirect_back(options = {}) redirects the user back to where the
     interception occurred, passing the given options to the redirect method.
@@ -108,11 +108,11 @@ The `acts_as_interceptor` method will ensure the following:
   - `intercepted_url_hash` returns a hash containing the interceptor_url_key
     and the signed intercepted url.
 
-  - `without_interception(&block)` executes a block with the old url options.
+  - `without_interceptor(&block)` executes a block with the old url options.
 
-  - `url_options_without_interception` returns the old url options.
+  - `url_options_without_interceptor` returns the old url options.
 
-  - `url_options_with_interception` returns the old url options merged with
+  - `url_options_with_interceptor` returns the old url options merged with
     the `intercepted_url_hash`. Can be used even if you specified
     `override_url_options: false`.
 
@@ -131,13 +131,13 @@ Alternatively, you can use `intercepted_url` in views:
 
 Finally, just by including the gem in your app, the following convenience
 methods will be added to all controllers: `current_url`, `current_url_hash`,
-`current_page?(url)` and `with_interception(&block)`.
+`current_page?(url)` and `with_interceptor(&block)`.
 
 `current_url` returns the current url.
-`current_url_hash` returns a hash containing the intercepted_url_key and the
-current url, signed and encrypted.
-`current_page?(url)` returns true iif the given url is the current url.
-`with_interception(&block)` executes the given block as if it was an
+`current_url_hash` returns a hash containing the `intercepted_url_key` and the
+`current_url`, signed and encrypted.
+`current_page?(url)` returns true iif the given url is the `current_url`.
+`with_interceptor(&block)` executes the given block as if it was an
 interceptor for the current controller.
 
 ## Contributing
@@ -173,7 +173,8 @@ interceptor for the current controller.
 
 ## Testing
 
-To run all existing tests for action_interceptor, simply execute the following from the main folder:
+To run all existing tests for Action Interceptor,
+simply execute the following from the main folder:
 
 ```sh
 $ rake

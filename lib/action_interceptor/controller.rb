@@ -11,8 +11,6 @@ module ActionInterceptor
       base.extend(ClassMethods)
     end
 
-    protected
-
     def current_url
       "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
     end
@@ -132,7 +130,6 @@ module ActionInterceptor
             @url_options_with_interceptor = intercepted_url_hash.merge(
                                               url_options_without_interceptor)
           end
-
 
           alias_method :url_options, :url_options_with_interceptor \
             unless !options[:override_url_options].nil? && \

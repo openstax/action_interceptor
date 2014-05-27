@@ -7,7 +7,7 @@ module ActionInterceptor
   end
 
   def self.override_url_options(bool = nil)
-    return @override_url_options || true if bool.nil?
+    return @override_url_options if bool.nil?
     @override_url_options = bool
   end
 
