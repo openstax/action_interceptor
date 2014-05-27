@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/openstax/action_interceptor.svg?branch=master)](https://travis-ci.org/openstax/action_interceptor)
 
+[![Code Climate](https://codeclimate.com/github/openstax/action_interceptor.png)](https://codeclimate.com/github/openstax/action_interceptor)
+
 Action Interceptor is a Rails engine that makes it easy to have controllers intercept
 actions from other controllers, have users perform a task and then return them to where
 they were when the interception happened.
