@@ -111,7 +111,8 @@ module ActionInterceptor
           end
 
           alias_method :url_options, :url_options_with_interceptor \
-            unless options[:skip_interceptor_url_options]
+            unless !options[:override_url_options].nil? && \
+                   !options[:override_url_options]
 
           def without_interceptor_url_options(&block)
             previous_url_options = url_options_with_interceptor

@@ -1,11 +1,14 @@
 require 'action_interceptor/engine'
 
 module ActionInterceptor
-  mattr_reader :intercepted_url_key
-
   def self.intercepted_url_key(key = nil)
-    return @intercepted_url_key || :r unless key
+    return @intercepted_url_key || :r if key.nil?
     @intercepted_url_key = key
+  end
+
+  def self.override_url_options(bool = nil)
+    return @override_url_options || true if bool.nil?
+    @override_url_options = bool
   end
 
   def self.interceptors

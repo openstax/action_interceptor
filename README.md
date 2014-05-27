@@ -22,6 +22,15 @@ And then execute:
 $ bundle install
 ```
 
+## Configuration
+
+Run the following rake task to addAction Interceptor's
+initializer to your application:
+
+```sh
+$ rake action_interceptor:install
+```
+
 ## Usage
     
 Add the following line to controllers that should
