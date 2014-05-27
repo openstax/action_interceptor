@@ -4,7 +4,7 @@
 
 Action Interceptor is a Rails engine that makes it easy to have controllers intercept
 actions from other controllers, have users perform a task and then return them to where
-they were before.
+they were when the interception happened.
 
 This can be used, for example, for registration, authentication, signing terms of use, etc.
 
@@ -22,52 +22,129 @@ And then execute:
 $ bundle install
 ```
 
-## Configuration
-
-Run the following rake task to addAction Interceptor's
-initializer to your application:
+Finally, run the following rake task to add
+Action Interceptor's initializer to your application:
 
 ```sh
 $ rake action_interceptor:install
 ```
 
 ## Usage
-    
-Add the following line to controllers that should
-intercept actions from other controllers:
+
+Interceptors are blocks of code that are declared in Action Interceptor's
+initializer. They execute in the context of your controllers and work
+very much like before_filters.
+
+For example, the following interceptor could be used to ensure that users
+have filled out a registration form:
 
 ```rb
-interceptor
-```
-    
-Then declare the controllers and actions to be intercepted:
+interceptor :registration do
 
-```rb
-intercept ApplicationController, only: :index do
-  # Block that returns:
-  # The redirection path if the action is to be intercepted
-  # Nil/false otherwise
+  return if current_user.try(:is_registered?)
+
+  respond_to do |format|
+    format.html { redirect_to register_path }
+    format.json { head(:forbidden) }
+  end
+
 end
 ```
 
-When users complete the task, use the following method to
-redirect them back to where they were before:
+What makes interceptors different from before_filters is that they will
+save the user's current url before redirecting. This is done through
+signed url params by default, falling back to session variables if those
+params are absent or invalid.
+
+Once declared, you can use an interceptor in any controller. For example,
+you might want to ensure that all logged in users have to complete
+a form before using your site. In that case, you could add the following
+to your `ApplicationController`:
+
+```rb
+class ApplicationController < ActionController::Base
+
+  interception :registration
+
+end
+```
+
+The controllers your interceptors redirect to should
+call the `acts_as_interceptor` method:
+
+```rb
+class RegistrationsController < ApplicationController
+
+  acts_as_interceptor
+
+  skip_interception :registration, only: [:new, :create]
+
+end
+```
+
+As shown above, interceptions work like before_filters and
+can be skipped using the skip_interception method.
+
+The `acts_as_interceptor` method will ensure the following:
+
+- The `url_options` method for that controller will be overriden, causing all
+  links and redirects for the controller and associated views to include
+  the signed return url. This can be skipped by calling `acts_as_interceptor`
+  like this: `acts_as_interceptor override_url_options: false`. In that case,
+  you are responsible for passing the `intercepted_url_hash` to any internal
+  links and redirects.
+
+- The following convenience methods will be added to the controller:
+  `redirect_back(options = {})`, `intercepted_url`, `intercepted_url_hash`,
+  `without_interception(&block)`, `url_options_without_interception` and
+  `url_options_with_interception`. These methods do the following:
+
+  - redirect_back(options = {}) redirects the user back to where the
+    interception occurred, passing the given options to the redirect method.
+
+  - `intercepted_url` returns the intercepted url. Can be used in views to make
+    links that redirect the user back to where the interception happened.
+
+  - `intercepted_url_hash` returns a hash containing the interceptor_url_key
+    and the signed intercepted url.
+
+  - `without_interception(&block)` executes a block with the old url options.
+
+  - `url_options_without_interception` returns the old url options.
+
+  - `url_options_with_interception` returns the old url options merged with
+    the `intercepted_url_hash`. Can be used even if you specified
+    `override_url_options: false`.
+
+When users complete the given task, use the following method to
+redirect them back to where the interception occurred:
 
 ```rb
 redirect_back
 ```
 
-Alternatively, you can use `redirect_url` in views:
+Alternatively, you can use `intercepted_url` in views:
 
 ```erb
-<%= link_to 'Back', redirect_url %>
+<%= link_to 'Back', intercepted_url %>
 ```
+
+Finally, just by including the gem in your app, the following convenience
+methods will be added to all controllers: `current_url`, `current_url_hash`,
+`current_page?(url)` and `with_interception(&block)`.
+
+`current_url` returns the current url.
+`current_url_hash` returns a hash containing the intercepted_url_key and the
+current url, signed and encrypted.
+`current_page?(url)` returns true iif the given url is the current url.
+`with_interception(&block)` executes the given block as if it was an
+interceptor for the current controller.
 
 ## Contributing
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Write tests for your feature
+3. Write specs for your feature
 4. Implement your new feature
 5. Test your feature (`rake`)
 6. Commit your changes (`git commit -am 'Added some feature'`)

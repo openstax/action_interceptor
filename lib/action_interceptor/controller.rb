@@ -22,7 +22,7 @@ module ActionInterceptor
       url.blank? || URI(url).path == request.path
     end
 
-    def encrypted_url_hash
+    def current_url_hash
       return @current_url_hash if @current_url_hash
 
       key = ActionInterceptor.intercepted_url_key
@@ -33,14 +33,15 @@ module ActionInterceptor
       @current_url_hash = {key => url}
     end
 
-    def interception_exec(&block)
-      @original_default_url_options ||= default_url_options
+    # Executes the given block as if it was an interceptor
+    def with_interceptor(&block)
+      @previous_default_url_options ||= default_url_options
 
       begin
         # Send the referer with intercepted requests
         # So we don't rely on the user's browser to do it for us
-        self.default_url_options = @original_default_url_options
-                                     .merge(encrypted_url_hash)
+        self.default_url_options = @previous_default_url_options
+                                     .merge(current_url_hash)
 
         # Execute the block as if it was defined in this controller
         instance_exec &block
@@ -49,13 +50,13 @@ module ActionInterceptor
         # and return the given value
         e.exit_value
       ensure
-        self.default_url_options = @original_default_url_options
+        self.default_url_options = @previous_default_url_options
       end
     end
 
     module ClassMethods
 
-      def interception(*interceptor_names, &block)
+      def interceptor(*interceptor_names, &block)
         options = interceptor_names.extract_options!
         filter_name = options.delete(:filter_name)
         fnames = interceptor_names.collect do |iname|
@@ -66,7 +67,7 @@ module ActionInterceptor
             blk = block || ActionInterceptor.interceptors[iname]
             raise UndefinedInterceptor, iname unless blk
 
-            interception_exec &blk
+            with_interceptor &blk
           end
 
           fname
@@ -75,7 +76,7 @@ module ActionInterceptor
         before_filter *fnames, options
       end
 
-      def skip_interception(*interceptor_names)
+      def skip_interceptor(*interceptor_names)
         options = interceptor_names.extract_options!
         filter_name = options.delete(:filter_name)
         fnames = interceptor_names.collect do |iname|
@@ -92,40 +93,6 @@ module ActionInterceptor
         class_eval do
 
           helper_method :intercepted_url
-
-          def interceptor_url_options
-            return @interceptor_url_options if @interceptor_url_options
-            url = Encryptor.encrypt_and_sign(intercepted_url)
-            key = ActionInterceptor.intercepted_url_key
-
-            @interceptor_url_options = {key => url}
-          end
-
-          alias_method :url_options_without_interceptor, :url_options
-
-          def url_options_with_interceptor
-            return @url_options_with_interceptor if @url_options_with_interceptor
-
-            @url_options_with_interceptor = interceptor_url_options.merge(
-                                              url_options_without_interceptor)
-          end
-
-          alias_method :url_options, :url_options_with_interceptor \
-            unless !options[:override_url_options].nil? && \
-                   !options[:override_url_options]
-
-          def without_interceptor_url_options(&block)
-            previous_url_options = url_options_with_interceptor
-
-            begin
-              @url_options_with_interceptor = url_options_without_interceptor
-              yield block
-            ensure
-              @url_options_with_interceptor = previous_url_options
-            end
-          end
-
-          alias_method :without_interceptor, :without_interceptor_url_options
 
           def intercepted_url
             return @intercepted_url if @intercepted_url
@@ -148,11 +115,45 @@ module ActionInterceptor
             @intercepted_url
           end
 
+          def intercepted_url_hash
+            return @intercepted_url_hash if @intercepted_url_hash
+            url = Encryptor.encrypt_and_sign(intercepted_url)
+            key = ActionInterceptor.intercepted_url_key
+
+            @intercepted_url_hash = {key => url}
+          end
+
+          alias_method :url_options_without_interceptor, :url_options
+
+          def url_options_with_interceptor
+            return @url_options_with_interceptor \
+              if @url_options_with_interceptor
+
+            @url_options_with_interceptor = intercepted_url_hash.merge(
+                                              url_options_without_interceptor)
+          end
+
+
+          alias_method :url_options, :url_options_with_interceptor \
+            unless !options[:override_url_options].nil? && \
+                   !options[:override_url_options]
+
+          def without_interceptor(&block)
+            previous_url_options = url_options_with_interceptor
+
+            begin
+              @url_options_with_interceptor = url_options_without_interceptor
+              yield block
+            ensure
+              @url_options_with_interceptor = previous_url_options
+            end
+          end
+
           def redirect_back(options = {})
             url = intercepted_url
 
             # Disable the return_to param
-            without_interceptor_url_options do
+            without_interceptor do
               # Convert '/' back to root_url
               # Also, prevent self redirects
               url = root_url if url == '/' || current_page?(url)
