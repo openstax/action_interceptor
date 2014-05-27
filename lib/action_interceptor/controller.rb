@@ -85,7 +85,7 @@ module ActionInterceptor
         skip_before_filter *fnames, options
       end
 
-      def acts_as_interceptor
+      def acts_as_interceptor(options = {})
         return if is_interceptor
         self.is_interceptor = true
 
@@ -93,24 +93,34 @@ module ActionInterceptor
 
           helper_method :intercepted_url
 
-          alias_method :url_options_without_interceptor, :url_options
-
-          def url_options
+          def interceptor_url_options
             return @interceptor_url_options if @interceptor_url_options
-
             url = Encryptor.encrypt_and_sign(intercepted_url)
             key = ActionInterceptor.intercepted_url_key
-            @interceptor_url_options = {key => url}.merge(super)
+
+            @interceptor_url_options = {key => url}
           end
 
+          alias_method :url_options_without_interceptor, :url_options
+
+          def url_options_with_interceptor
+            return @url_options_with_interceptor if @url_options_with_interceptor
+
+            @url_options_with_interceptor = interceptor_url_options.merge(
+                                              url_options_without_interceptor)
+          end
+
+          alias_method :url_options, :url_options_with_interceptor \
+            unless options[:skip_interceptor_url_options]
+
           def without_interceptor_url_options(&block)
-            url_options_with_interceptor = url_options
+            previous_url_options = url_options_with_interceptor
 
             begin
-              @interceptor_url_options = url_options_without_interceptor
+              @url_options_with_interceptor = url_options_without_interceptor
               yield block
             ensure
-              @interceptor_url_options = url_options_with_interceptor
+              @url_options_with_interceptor = previous_url_options
             end
           end
 
