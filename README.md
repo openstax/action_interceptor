@@ -95,9 +95,10 @@ The `acts_as_interceptor` method will ensure the following:
   links and redirects.
 
 - The following convenience methods will be added to the controller:
-  `redirect_back(options = {})`, `intercepted_url`, `intercepted_url_hash`,
-  `without_interceptor(&block)`, `url_options_without_interceptor` and
-  `url_options_with_interceptor`. These methods do the following:
+  `redirect_back(options = {})`, `intercepted_url`, `intercepted_url=`,
+  `intercepted_url_hash`, `without_interceptor(&block)`,
+  `url_options_without_interceptor` and `url_options_with_interceptor`.
+  These methods have the following behavior:
 
   - redirect_back(options = {}) redirects the user back to where the
     interception occurred, passing the given options to the redirect method.
@@ -105,8 +106,10 @@ The `acts_as_interceptor` method will ensure the following:
   - `intercepted_url` returns the intercepted url. Can be used in views to make
     links that redirect the user back to where the interception happened.
 
-  - `intercepted_url_hash` returns a hash containing the interceptor_url_key
-    and the signed intercepted url.
+  - `intercepted_url=` can be used to overwrite the intercepted url, if needed.
+
+  - `intercepted_url_hash` returns a hash containing the `interceptor_url_key`
+    and the signed `intercepted_url`.
 
   - `without_interceptor(&block)` executes a block with the old url options.
 
@@ -133,12 +136,12 @@ Finally, just by including the gem in your app, the following convenience
 methods will be added to all controllers: `current_url`, `current_url_hash`,
 `current_page?(url)` and `with_interceptor(&block)`.
 
-`current_url` returns the current url.
-`current_url_hash` returns a hash containing the `intercepted_url_key` and the
-`current_url`, signed and encrypted.
-`current_page?(url)` returns true iif the given url is the `current_url`.
-`with_interceptor(&block)` executes the given block as if it was an
-interceptor for the current controller.
+- `current_url` returns the current url.
+- `current_url_hash` returns a hash containing the `intercepted_url_key` and the
+  `current_url`, signed and encrypted.
+- `current_page?(url)` returns true iif the given url is the `current_url`.
+- `with_interceptor(&block)` executes the given block as if it was an
+  interceptor for the current controller.
 
 ## Contributing
 

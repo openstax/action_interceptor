@@ -23,6 +23,7 @@ module ActionInterceptor
       expect(RegistrationsController.is_interceptor).to be_true
 
       expect(RegistrationsController.new).to respond_to(:intercepted_url)
+      expect(RegistrationsController.new).to respond_to(:intercepted_url=)
       expect(RegistrationsController.new).to respond_to(:intercepted_url_hash)
       expect(RegistrationsController.new).to(
         respond_to(:url_options_without_interceptor))
