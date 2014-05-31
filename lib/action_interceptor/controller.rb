@@ -145,7 +145,7 @@ module ActionInterceptor
 
             begin
               @url_options_with_interceptor = url_options_without_interceptor
-              yield block
+              instance_exec &block
             ensure
               @url_options_with_interceptor = previous_url_options
             end
