@@ -1,8 +1,11 @@
+require 'action_interceptor/common'
 require 'action_interceptor/encryptor'
 require 'action_interceptor/undefined_interceptor'
 
 module ActionInterceptor
   module Controller
+
+    include Common
 
     def self.included(base)
       base.class_attribute :is_interceptor, :use_interceptor,
@@ -13,7 +16,8 @@ module ActionInterceptor
 
       base.before_filter :delete_intercepted_url
 
-      base.helper_method :current_page?, :current_url, :current_url_hash
+      base.helper_method :is_interceptor, :use_interceptor, :use_interceptor=,
+                         :current_page?, :current_url, :current_url_hash, 
 
       base.extend(ClassMethods)
     end
@@ -38,60 +42,6 @@ module ActionInterceptor
       # Also, can't call root_url here, so use '/' instead
       url = Encryptor.encrypt_and_sign(request.get? ? current_url : '/')
       @current_url_hash = {key => url}
-    end
-
-    def url_for(options = {})
-      url = super
-      return url unless self.use_interceptor
-
-      @intercepted_url_hash ||= self.is_interceptor ? intercepted_url_hash : \
-                                                      current_url_hash
-
-      uri = URI(url)
-      new_query = URI.decode_www_form(uri.query || '') + \
-                    @intercepted_url_hash.to_a
-      uri.query = URI.encode_www_form(new_query)
-      uri.to_s
-    end
-
-    # Executes the given block as if it was inside an interceptor
-    def with_interceptor(&block)
-      previous_use_interceptor = self.use_interceptor
-
-      begin
-        # Send the referer with intercepted requests
-        # So we don't rely on the user's browser to do it for us
-        self.use_interceptor = true
-
-        # Execute the block as if it was defined in this controller
-        instance_exec &block
-      rescue LocalJumpError => e
-        # Silently ignore `return` errors in the block
-        # and return the given value
-        e.exit_value
-      ensure
-        self.use_interceptor = previous_use_interceptor
-      end
-    end
-
-    # Executes the given block as if it was not inside an interceptor
-    def without_interceptor(&block)
-      previous_use_interceptor = self.use_interceptor
-
-      begin
-        # Send the referer with intercepted requests
-        # So we don't rely on the user's browser to do it for us
-        self.use_interceptor = false
-
-        # Execute the block as if it was defined in this controller
-        instance_exec &block
-      rescue LocalJumpError => e
-        # Silently ignore `return` errors in the block
-        # and return the given value
-        e.exit_value
-      ensure
-        self.use_interceptor = previous_use_interceptor
-      end
     end
 
     def delete_intercepted_url

@@ -21,6 +21,8 @@ module ActionInterceptor
       expect(ActionController::Base.new.respond_to?(
         :current_url_hash, true)).to be_true
       expect(ActionController::Base.new.respond_to?(
+        :url_for, true)).to be_true
+      expect(ActionController::Base.new.respond_to?(
         :with_interceptor, true)).to be_true
       expect(ActionController::Base.new.respond_to?(
         :without_interceptor, true)).to be_true

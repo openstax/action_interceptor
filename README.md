@@ -87,19 +87,38 @@ end
 As shown above, interceptions work like before_filters and
 can be skipped using the skip_interceptor method.
 
-The `acts_as_interceptor` method will ensure the following:
+Just by including the gem in your app, the following convenience methods
+will also be added to all controllers as helper methods, so they will also
+be available in views: `current_page?(url)`, `current_url`, `current_url_hash`,
+`with_interceptor(&block)` and `without_interceptor(&block)`.
+
+- `with_interceptor(&block)` executes the given block:
+  - Adding the intercepted URL param to all links and redirects
+  - As if it was declared in the context of `self`
+- `without_interceptor(&block)` executes the given block:
+  - With the default URL params for all links and redirects
+  - As if it was declared in the context of `self`
+
+- `current_url_hash` returns a hash containing the `intercepted_url_key` and the
+  `current_url`, signed and encrypted.
+
+- And the following methods, backported from Rails 4:
+  - `current_url` returns the current url.
+  - `current_page?(url)` returns true iif the given url is the `current_url`.
+
+When called, the `acts_as_interceptor` method will ensure the following:
 
 - The `url_options` method for that controller will be overriden, causing all
   links and redirects for the controller and associated views to include
-  the signed return url. This can be skipped by calling `acts_as_interceptor`
-  like this: `acts_as_interceptor override_url_options: false`. In that case,
-  you are responsible for passing the `intercepted_url_hash` to any internal
-  links and redirects.
+  the signed return url. This behavior can be skipped by passing
+  `:override_url_options => false` to the `acts_as_interceptor` call,
+  like so: `acts_as_interceptor :override_url_options => false`.
+  In that case, you are responsible for wrapping any internal links and
+  redirects in `with_interceptor` blocks.
 
 - The following convenience methods will be added to the controller:
-  `redirect_back(options = {})`, `intercepted_url`, `intercepted_url=`,
-  `intercepted_url_hash`, `without_interceptor(&block)`,
-  `url_options_without_interceptor` and `url_options_with_interceptor`.
+  `redirect_back(options = {})`, `intercepted_url`,
+  `intercepted_url=` and `intercepted_url_hash`.
   These methods have the following behavior:
 
   - redirect_back(options = {}) redirects the user back to where the
@@ -113,14 +132,6 @@ The `acts_as_interceptor` method will ensure the following:
   - `intercepted_url_hash` returns a hash containing the `interceptor_url_key`
     and the signed `intercepted_url`.
 
-  - `without_interceptor(&block)` executes a block with the old url options.
-
-  - `url_options_without_interceptor` returns the old url options.
-
-  - `url_options_with_interceptor` returns the old url options merged with
-    the `intercepted_url_hash`. Can be used even if you specified
-    `override_url_options: false`.
-
 When users complete the given task, use the following method to
 redirect them back to where the interception occurred:
 
@@ -133,17 +144,6 @@ Alternatively, you can use `intercepted_url` in views:
 ```erb
 <%= link_to 'Back', intercepted_url %>
 ```
-
-Finally, just by including the gem in your app, the following convenience
-methods will be added to all controllers: `current_url`, `current_url_hash`,
-`current_page?(url)` and `with_interceptor(&block)`.
-
-- `current_url` returns the current url.
-- `current_url_hash` returns a hash containing the `intercepted_url_key` and the
-  `current_url`, signed and encrypted.
-- `current_page?(url)` returns true iif the given url is the `current_url`.
-- `with_interceptor(&block)` executes the given block as if it was an
-  interceptor for the current controller.
 
 ## Contributing
 
