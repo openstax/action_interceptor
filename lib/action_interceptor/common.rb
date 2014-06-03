@@ -12,7 +12,7 @@ module ActionInterceptor
 
       uri = URI(url)
       new_query = URI.decode_www_form(uri.query || '') + \
-                    @interceptor_url_hash.to_a
+                    @interceptor_url_for_hash.to_a
       uri.query = URI.encode_www_form(new_query)
       uri.to_s
     end
