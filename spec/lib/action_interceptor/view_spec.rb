@@ -5,11 +5,11 @@ module ActionInterceptor
 
     it 'modifies ActionView::Base' do
       expect(ActionView::Base.new.respond_to?(
-        :url_for, true)).to be_true
+        :url_for, true)).to eq(true)
       expect(ActionView::Base.new.respond_to?(
-        :with_interceptor, true)).to be_true
+        :with_interceptor, true)).to eq(true)
       expect(ActionView::Base.new.respond_to?(
-        :without_interceptor, true)).to be_true
+        :without_interceptor, true)).to eq(true)
     end
 
   end
