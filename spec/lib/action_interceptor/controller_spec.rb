@@ -5,6 +5,7 @@ module ActionInterceptor
 
     it 'modifies ActionController::Base' do
       expect(ActionController::Base).to respond_to(:is_interceptor)
+      expect(ActionController::Base).to respond_to(:use_interceptor)
       expect(ActionController::Base).to respond_to(:interceptor_filters)
       expect(ActionController::Base.is_interceptor).to be_false
       expect(ActionController::Base.interceptor_filters).to be_a(Hash)
@@ -13,24 +14,29 @@ module ActionInterceptor
       expect(ActionController::Base).to respond_to(:skip_interceptor)
       expect(ActionController::Base).to respond_to(:acts_as_interceptor)
 
-      expect(ActionController::Base.new).to respond_to(:current_page?)
-      expect(ActionController::Base.new).to respond_to(:current_url)
-      expect(ActionController::Base.new).to respond_to(:current_url_hash)
-      expect(ActionController::Base.new).to respond_to(:with_interceptor)
+      expect(ActionController::Base.new.respond_to?(
+        :current_page?, true)).to be_true
+      expect(ActionController::Base.new.respond_to?(
+        :current_url, true)).to be_true
+      expect(ActionController::Base.new.respond_to?(
+        :current_url_hash, true)).to be_true
+      expect(ActionController::Base.new.respond_to?(
+        :with_interceptor, true)).to be_true
+      expect(ActionController::Base.new.respond_to?(
+        :without_interceptor, true)).to be_true
     end
 
     it 'modifies classes that act_as_interceptor' do
       expect(RegistrationsController.is_interceptor).to be_true
 
-      expect(RegistrationsController.new).to respond_to(:intercepted_url)
-      expect(RegistrationsController.new).to respond_to(:intercepted_url=)
-      expect(RegistrationsController.new).to respond_to(:intercepted_url_hash)
-      expect(RegistrationsController.new).to(
-        respond_to(:url_options_without_interceptor))
-      expect(RegistrationsController.new).to(
-        respond_to(:url_options_with_interceptor))
-      expect(RegistrationsController.new).to respond_to(:without_interceptor)
-      expect(RegistrationsController.new).to respond_to(:redirect_back)
+      expect(RegistrationsController.new.respond_to?(
+        :intercepted_url, true)).to be_true
+      expect(RegistrationsController.new.respond_to?(
+        :intercepted_url=, true)).to be_true
+      expect(RegistrationsController.new.respond_to?(
+        :intercepted_url_hash, true)).to be_true
+      expect(RegistrationsController.new.respond_to?(
+        :redirect_back, true)).to be_true
     end
 
     it 'registers and skips before_filters' do

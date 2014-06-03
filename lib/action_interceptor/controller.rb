@@ -5,19 +5,28 @@ module ActionInterceptor
   module Controller
 
     def self.included(base)
-      base.class_attribute :is_interceptor, :interceptor_filters
+      base.class_attribute :is_interceptor, :use_interceptor,
+                           :interceptor_filters
       base.is_interceptor = false
+      base.use_interceptor = false
       base.interceptor_filters = {}
+
+      base.before_filter :delete_intercepted_url
+
+      base.helper_method :current_page?, :current_url, :current_url_hash
+
       base.extend(ClassMethods)
     end
 
-    def current_url
-      "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
-    end
+    protected
 
     def current_page?(url)
       # Blank is the current page
       url.blank? || URI(url).path == request.path
+    end
+
+    def current_url
+      "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
     end
 
     def current_url_hash
@@ -31,15 +40,28 @@ module ActionInterceptor
       @current_url_hash = {key => url}
     end
 
-    # Executes the given block as if it was an interceptor
+    def url_for(options = {})
+      url = super
+      return url unless self.use_interceptor
+
+      @intercepted_url_hash ||= self.is_interceptor ? intercepted_url_hash : \
+                                                      current_url_hash
+
+      uri = URI(url)
+      new_query = URI.decode_www_form(uri.query || '') + \
+                    @intercepted_url_hash.to_a
+      uri.query = URI.encode_www_form(new_query)
+      uri.to_s
+    end
+
+    # Executes the given block as if it was inside an interceptor
     def with_interceptor(&block)
-      @previous_default_url_options ||= default_url_options
+      previous_use_interceptor = self.use_interceptor
 
       begin
         # Send the referer with intercepted requests
         # So we don't rely on the user's browser to do it for us
-        self.default_url_options = @previous_default_url_options
-                                     .merge(current_url_hash)
+        self.use_interceptor = true
 
         # Execute the block as if it was defined in this controller
         instance_exec &block
@@ -48,8 +70,32 @@ module ActionInterceptor
         # and return the given value
         e.exit_value
       ensure
-        self.default_url_options = @previous_default_url_options
+        self.use_interceptor = previous_use_interceptor
       end
+    end
+
+    # Executes the given block as if it was not inside an interceptor
+    def without_interceptor(&block)
+      previous_use_interceptor = self.use_interceptor
+
+      begin
+        # Send the referer with intercepted requests
+        # So we don't rely on the user's browser to do it for us
+        self.use_interceptor = false
+
+        # Execute the block as if it was defined in this controller
+        instance_exec &block
+      rescue LocalJumpError => e
+        # Silently ignore `return` errors in the block
+        # and return the given value
+        e.exit_value
+      ensure
+        self.use_interceptor = previous_use_interceptor
+      end
+    end
+
+    def delete_intercepted_url
+      session.delete(ActionInterceptor.intercepted_url_key)
     end
 
     module ClassMethods
@@ -85,18 +131,20 @@ module ActionInterceptor
       end
 
       def acts_as_interceptor(options = {})
-        return if is_interceptor
         self.is_interceptor = true
+        self.use_interceptor = options[:override_url_options].nil? ? \
+                                 ActionInterceptor.override_url_options : \
+                                 options[:override_url_options]
 
-        @override_url_options = options[:override_url_options].nil? ? \
-                                  ActionInterceptor.override_url_options : \
-                                  options[:override_url_options]
-
-        class_eval do
+        class_exec do
 
           attr_writer :intercepted_url
 
-          helper_method :intercepted_url
+          skip_before_filter :delete_intercepted_url
+
+          helper_method :intercepted_url, :intercepted_url_hash
+
+          protected
 
           def intercepted_url
             return @intercepted_url if @intercepted_url
@@ -125,30 +173,6 @@ module ActionInterceptor
             key = ActionInterceptor.intercepted_url_key
 
             @intercepted_url_hash = {key => url}
-          end
-
-          alias_method :url_options_without_interceptor, :url_options
-
-          def url_options_with_interceptor
-            return @url_options_with_interceptor \
-              if @url_options_with_interceptor
-
-            @url_options_with_interceptor = intercepted_url_hash.merge(
-                                              url_options_without_interceptor)
-          end
-
-          alias_method :url_options, :url_options_with_interceptor \
-            if @override_url_options.nil? || @override_url_options
-
-          def without_interceptor(&block)
-            previous_url_options = url_options_with_interceptor
-
-            begin
-              @url_options_with_interceptor = url_options_without_interceptor
-              instance_exec &block
-            ensure
-              @url_options_with_interceptor = previous_url_options
-            end
           end
 
           def redirect_back(options = {})
