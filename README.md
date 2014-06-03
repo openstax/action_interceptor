@@ -24,12 +24,23 @@ And then execute:
 $ bundle install
 ```
 
-Finally, run the following rake task to add
+Afterwards, run the following rake task to add
 Action Interceptor's initializer to your application:
 
 ```sh
 $ rake action_interceptor:install
 ```
+
+In case Action Interceptor is completely unable to determine which page a user
+came from (should rarely happen if properly configured), it will send the user
+to your application or gem's root_url. So make sure it is defined:
+
+```rb
+root :to => 'some_controller#some_action'
+```
+
+Alternatively, you can always stub root_url in your
+ApplicationController and make it a helper method.
 
 ## Usage
 
