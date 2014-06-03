@@ -41,6 +41,7 @@ module ActionInterceptor
       # Can't redirect back to non-get
       # Also, can't call root_url here, so use '/' instead
       url = Encryptor.encrypt_and_sign(request.get? ? current_url : '/')
+
       @current_url_hash = {key => url}
     end
 
@@ -100,11 +101,16 @@ module ActionInterceptor
             return @intercepted_url if @intercepted_url
 
             key = ActionInterceptor.intercepted_url_key
+            encrypted_url = params[key]
+
             begin
               # URL params are the most reliable, as they preserve
               # state even if the user presses the back button
               # We need to sign them to prevent the Open Redirect vulnerability
-              @intercepted_url = Encryptor.decrypt_and_verify(params[key])
+              @intercepted_url = Encryptor.decrypt_and_verify(encrypted_url)
+
+              # If we got this far, the encrypted url is valid, so reuse it
+              @intercepted_url_hash = {key => encrypted_url}
             rescue ActiveSupport::MessageVerifier::InvalidSignature
               # If the param is not available, use our best guess
               # Session and referer are safe for redirects (for that user)
@@ -118,8 +124,12 @@ module ActionInterceptor
           end
 
           def intercepted_url_hash
+            # Run intercepted_url to verify the params in case the
+            # encrypted url is in there and can be reused
+            unencrypted_url = intercepted_url
             return @intercepted_url_hash if @intercepted_url_hash
-            url = Encryptor.encrypt_and_sign(intercepted_url)
+
+            url = Encryptor.encrypt_and_sign(unencrypted_url)
             key = ActionInterceptor.intercepted_url_key
 
             @intercepted_url_hash = {key => url}
