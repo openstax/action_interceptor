@@ -93,6 +93,9 @@ module ActionInterceptor
 
           skip_before_filter :delete_intercepted_url
 
+          # Ensure that we always store the intercepted url
+          before_filter :intercepted_url
+
           helper_method :intercepted_url, :intercepted_url_hash
 
           protected
