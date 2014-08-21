@@ -1,8 +1,6 @@
 module ActionInterceptor
   module Common
 
-    protected
-
     def url_for(options = {})
       url = super
       return url unless use_interceptor
@@ -16,6 +14,8 @@ module ActionInterceptor
       uri.query = URI.encode_www_form(new_query)
       uri.to_s
     end
+
+    protected
 
     # Executes the given block as if it was inside an interceptor
     def with_interceptor(&block)

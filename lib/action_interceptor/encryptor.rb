@@ -13,9 +13,13 @@ module ActionInterceptor
 
     def self.message_encryptor
       return @message_encryptor if @message_encryptor
-      config = Rails.application.config
-      application_secret = config.respond_to?(:secret_key_base) ? \
-                             config.secret_key_base : config.secret_token
+
+      application = Rails.application
+      config = application.config
+      application_secret = application.secrets[:secret_key_base] \
+                             if application.respond_to?(:secrets)
+      application_secret ||= config.secret_key_base if config.respond_to?(:secret_key_base)
+      application_secret ||= config.secret_token
 
       # This is how Rails 4 generates keys for encrypted cookies
       # Except that, in Rails 4, MessageEncryptor can take 2 different secrets,
