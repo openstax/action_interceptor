@@ -3,9 +3,7 @@ require 'action_interceptor/encryptor'
 require 'action_interceptor/undefined_interceptor'
 
 module ActionInterceptor
-  module Controller
-
-    include Common
+  module ActionController
 
     def self.included(base)
       base.class_attribute :is_interceptor, :use_interceptor,
@@ -47,6 +45,12 @@ module ActionInterceptor
 
     def delete_intercepted_url
       session.delete(ActionInterceptor.intercepted_url_key)
+    end
+
+    private
+
+    def _compute_redirect_to_location(options)
+      url_for(super)
     end
 
     module ClassMethods
@@ -159,4 +163,4 @@ module ActionInterceptor
   end
 end
 
-ActionController::Base.send :include, ActionInterceptor::Controller
+ActionController::Base.send :include, ActionInterceptor::ActionController

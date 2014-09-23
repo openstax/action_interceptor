@@ -1,5 +1,5 @@
 module ActionInterceptor
-  module Mailer
+  module ActionMailer
 
     def self.included(base)
       base.helper_method :use_interceptor, :use_interceptor=
@@ -18,4 +18,4 @@ module ActionInterceptor
   end
 end
 
-ActionMailer::Base.send :include, ActionInterceptor::Mailer
+ActionMailer::Base.send :include, ActionInterceptor::ActionMailer

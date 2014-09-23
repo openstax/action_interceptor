@@ -1,16 +1,23 @@
+require 'action_interceptor/action_controller'
+
 module ActionInterceptor
   module Common
 
-    def url_for(options = {})
-      url = super
+    def self.included(base)
+      base.alias_method_chain :url_for, :interceptor
+    end
+
+    def url_for_with_interceptor(options = {})
+      url = url_for_without_interceptor(options)
       return url unless use_interceptor
 
       @interceptor_url_for_hash ||= is_interceptor ? \
-                                    intercepted_url_hash : current_url_hash
+                                    intercepted_url_hash : \
+                                    current_url_hash
 
       uri = URI(url)
-      new_query = URI.decode_www_form(uri.query || '') + \
-                    @interceptor_url_for_hash.to_a
+      new_query = Hash[URI.decode_www_form(uri.query || '')]
+                    .merge(@interceptor_url_for_hash)
       uri.query = URI.encode_www_form(new_query)
       uri.to_s
     end
@@ -59,3 +66,6 @@ module ActionInterceptor
 
   end
 end
+
+ActionController::Base.send :include, ActionInterceptor::Common
+ActionView::RoutingUrlFor.send :include, ActionInterceptor::Common

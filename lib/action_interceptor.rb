@@ -2,8 +2,8 @@ require 'action_interceptor/engine'
 
 module ActionInterceptor
   def self.intercepted_url_key(key = nil)
-    @intercepted_url_key = key unless key.blank?
-    @intercepted_url_key || :r
+    @intercepted_url_key = key.to_s unless key.blank?
+    @intercepted_url_key || 'r'
   end
 
   def self.override_url_options(bool = nil)
