@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe ActionInterceptor do
   it 'must be configurable' do
-    expect(ActionInterceptor.intercepted_url_key).to eq(:dummy_key)
+    expect(ActionInterceptor.intercepted_url_key).to eq('dummy_key')
     expect(ActionInterceptor.override_url_options).to eq(true)
     expect(ActionInterceptor.interceptors.keys).to include(:registration)
 
@@ -14,7 +14,7 @@ describe ActionInterceptor do
       interceptor :my_name, &my_block
     end
 
-    expect(ActionInterceptor.intercepted_url_key).to eq(:my_key)
+    expect(ActionInterceptor.intercepted_url_key).to eq('my_key')
     expect(ActionInterceptor.override_url_options).to eq(false)
     expect(ActionInterceptor.interceptors).to include({:my_name => my_block})
   end

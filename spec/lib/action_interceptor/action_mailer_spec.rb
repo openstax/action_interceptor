@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 module ActionInterceptor
-  describe Mailer do
+  describe ActionMailer do
 
     it 'modifies ActionMailer::Base' do
-      mailer = ActionMailer::Base.send(:new)
+      mailer = ::ActionMailer::Base.send(:new)
       expect(mailer.respond_to?(:use_interceptor, true)).to eq(true)
       expect(mailer.respond_to?(:use_interceptor=, true)).to eq(true)
 
