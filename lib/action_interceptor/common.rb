@@ -68,4 +68,6 @@ module ActionInterceptor
 end
 
 ActionController::Base.send :include, ActionInterceptor::Common
-ActionView::RoutingUrlFor.send :include, ActionInterceptor::Common
+ActionView::Base.send :include, ActionInterceptor::Common
+ActionView::RoutingUrlFor.send :include, ActionInterceptor::Common \
+  if defined?(ActionView::RoutingUrlFor)

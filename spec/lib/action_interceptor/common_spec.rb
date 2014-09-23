@@ -12,9 +12,7 @@ module ActionInterceptor
         :without_interceptor, true)).to eq(true)
     end
 
-    it 'modifies ActionView::RoutingUrlFor' do
-      ::ActionView::Base.send :include, ::ActionView::RoutingUrlFor
-
+    it 'modifies ActionView::Base' do
       expect(::ActionView::Base.new.respond_to?(
         :url_for, true)).to eq(true)
       expect(::ActionView::Base.new.respond_to?(
