@@ -20,6 +20,10 @@ module ActionInterceptor
       base.extend(ClassMethods)
     end
 
+    def _compute_redirect_to_location(options)
+      url_for(super)
+    end
+
     protected
 
     def current_page?(url)
@@ -45,12 +49,6 @@ module ActionInterceptor
 
     def delete_intercepted_url
       session.delete(ActionInterceptor.intercepted_url_key)
-    end
-
-    private
-
-    def _compute_redirect_to_location(options)
-      url_for(super)
     end
 
     module ClassMethods
