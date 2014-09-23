@@ -20,8 +20,8 @@ module ActionInterceptor
       base.extend(ClassMethods)
     end
 
-    def _compute_redirect_to_location(options)
-      url_for(super)
+    def _compute_redirect_to_location(*args, &block)
+      url_for(super(*args, &block))
     end
 
     protected
