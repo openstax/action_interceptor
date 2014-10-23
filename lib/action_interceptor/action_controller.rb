@@ -43,7 +43,8 @@ module ActionInterceptor
     def current_url_hash
       return @current_url_hash if @current_url_hash
 
-      key = interceptor_config[:intercepted_url_key]
+      config = interceptor_config || ActionInterceptor::DEFAULT_CONFIG
+      key = config[:intercepted_url_key]
 
       # Can't redirect back to non-get
       # Also, can't call root_url here, so use '/' instead
@@ -53,7 +54,6 @@ module ActionInterceptor
     end
 
     def interceptor_setup
-      config = interceptor_config
       if is_interceptor?
         self.interceptor_enabled = interceptor_config[:override_url_options]
         session.delete(:interceptor) if interceptor_config[:skip_session]
