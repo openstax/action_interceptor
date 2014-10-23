@@ -6,25 +6,30 @@ module ActionInterceptor
   module ActionController
 
     def self.included(base)
-      base.class_attribute :is_interceptor, :use_interceptor,
-                           :interceptor_filters
-      base.is_interceptor = false
-      base.use_interceptor = false
+      base.class_attribute :interceptor_config, :interceptor_filters
       base.interceptor_filters = {}
 
-      base.before_filter :delete_intercepted_url
+      base.send :attr_accessor, :interceptor_enabled
 
-      base.helper_method :is_interceptor, :use_interceptor, :use_interceptor=,
-                         :current_page?, :current_url, :current_url_hash, 
+      base.before_filter :interceptor_setup
+
+      base.helper_method :_compute_redirect_to_location,
+                         :interceptor_enabled, :interceptor_enabled=,
+                         :is_interceptor?, :current_page?,
+                         :current_url, :current_url_hash, 
 
       base.extend(ClassMethods)
     end
+
+    protected
 
     def _compute_redirect_to_location(*args, &block)
       url_for(super(*args, &block))
     end
 
-    protected
+    def is_interceptor?
+      !interceptor_config.nil?
+    end
 
     def current_page?(url)
       # Blank is the current page
@@ -38,7 +43,7 @@ module ActionInterceptor
     def current_url_hash
       return @current_url_hash if @current_url_hash
 
-      key = ActionInterceptor.intercepted_url_key
+      key = interceptor_config[:intercepted_url_key]
 
       # Can't redirect back to non-get
       # Also, can't call root_url here, so use '/' instead
@@ -47,8 +52,15 @@ module ActionInterceptor
       @current_url_hash = {key => url}
     end
 
-    def delete_intercepted_url
-      session.delete(ActionInterceptor.intercepted_url_key)
+    def interceptor_setup
+      config = interceptor_config
+      if is_interceptor?
+        self.interceptor_enabled = interceptor_config[:override_url_options]
+        session.delete(:interceptor) if interceptor_config[:skip_session]
+      else
+        self.interceptor_enabled = false
+        session.delete(:interceptor)
+      end
     end
 
     module ClassMethods
@@ -83,17 +95,12 @@ module ActionInterceptor
         skip_before_filter *fnames, options
       end
 
-      def acts_as_interceptor(options = {})
-        self.is_interceptor = true
-        self.use_interceptor = options[:override_url_options].nil? ? \
-                                 ActionInterceptor.override_url_options : \
-                                 options[:override_url_options]
+      def acts_as_interceptor(opts = {})
+        self.interceptor_config = ActionInterceptor::DEFAULT_CONFIG.merge(opts)
 
         class_exec do
 
           attr_writer :intercepted_url
-
-          skip_before_filter :delete_intercepted_url
 
           # Ensure that we always store the intercepted url
           before_filter :intercepted_url
@@ -105,8 +112,11 @@ module ActionInterceptor
           def intercepted_url
             return @intercepted_url if @intercepted_url
 
-            key = ActionInterceptor.intercepted_url_key
+            key = interceptor_config[:intercepted_url_key]
             encrypted_url = params[key]
+            session_hash = session[:interceptor] \
+              unless interceptor_config[:skip_session]
+            session_hash ||= {}
 
             begin
               # URL params are the most reliable, as they preserve
@@ -114,17 +124,24 @@ module ActionInterceptor
               # We need to sign them to prevent the Open Redirect vulnerability
               @intercepted_url = Encryptor.decrypt_and_verify(encrypted_url)
 
-              # If we got this far, the encrypted url is valid, so reuse it
+              # If we got this far, the encrypted url is valid
+              # (i.e. we signed it), so reuse it
               @intercepted_url_hash = {key => encrypted_url}
             rescue ActiveSupport::MessageVerifier::InvalidSignature
               # If the param is not available, use our best guess
               # Session and referer are safe for redirects (for that user)
               # Also, can't call root_url here, so use '/' instead
-              @intercepted_url = session[key] || request.referer || '/'
+              @intercepted_url = session_hash[key] || request.referer || '/'
             end
+
+            # Prevent self-redirect
+            @intercepted_url = '/' if current_page?(@intercepted_url)
+
             # Session is a signed plaintext in Rails 3
             # In Rails 4, it is encrypted by default
-            session[key] = @intercepted_url
+            session[:interceptor] = session_hash.merge(
+              key => @intercepted_url) unless interceptor_config[:skip_session]
+
             @intercepted_url
           end
 
@@ -135,21 +152,15 @@ module ActionInterceptor
             return @intercepted_url_hash if @intercepted_url_hash
 
             url = Encryptor.encrypt_and_sign(unencrypted_url)
-            key = ActionInterceptor.intercepted_url_key
+            key = interceptor_config[:intercepted_url_key]
 
             @intercepted_url_hash = {key => url}
           end
 
           def redirect_back(options = {})
-            url = intercepted_url
-
             # Disable the return_to param
             without_interceptor do
-              # Convert '/' back to root_url
-              # Also, prevent self redirects
-              url = root_url if url == '/' || current_page?(url)
-
-              redirect_to url, options
+              redirect_to intercepted_url, options
             end
           end
 

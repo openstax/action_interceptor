@@ -3,6 +3,8 @@ ActionInterceptor.configure do
 
   override_url_options true
 
+  skip_session false
+
   interceptor :registration do
   end
 

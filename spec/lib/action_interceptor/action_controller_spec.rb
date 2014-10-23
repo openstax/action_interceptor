@@ -4,16 +4,19 @@ module ActionInterceptor
   describe ActionController do
 
     it 'modifies ActionController::Base' do
-      expect(::ActionController::Base).to respond_to(:is_interceptor)
-      expect(::ActionController::Base).to respond_to(:use_interceptor)
       expect(::ActionController::Base).to respond_to(:interceptor_filters)
-      expect(::ActionController::Base.is_interceptor).to eq(false)
       expect(::ActionController::Base.interceptor_filters).to be_a(Hash)
 
       expect(::ActionController::Base).to respond_to(:interceptor)
       expect(::ActionController::Base).to respond_to(:skip_interceptor)
       expect(::ActionController::Base).to respond_to(:acts_as_interceptor)
 
+      expect(::ActionController::Base.new.respond_to?(
+        :is_interceptor?, true)).to eq(true)
+      expect(::ActionController::Base.new.send :is_interceptor?).to eq(false)
+
+      expect(::ActionController::Base.new.respond_to?(
+        :interceptor_enabled, true)).to eq(true)
       expect(::ActionController::Base.new.respond_to?(
         :current_page?, true)).to eq(true)
       expect(::ActionController::Base.new.respond_to?(
@@ -23,7 +26,7 @@ module ActionInterceptor
     end
 
     it 'modifies classes that act_as_interceptor' do
-      expect(RegistrationsController.is_interceptor).to eq(true)
+      expect(RegistrationsController.new.send :is_interceptor?).to eq(true)
 
       expect(RegistrationsController.new.respond_to?(
         :intercepted_url, true)).to eq(true)

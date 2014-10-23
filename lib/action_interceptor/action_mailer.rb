@@ -2,16 +2,16 @@ module ActionInterceptor
   module ActionMailer
 
     def self.included(base)
-      base.helper_method :use_interceptor, :use_interceptor=
+      base.helper_method :interceptor_enabled, :interceptor_enabled=
     end
 
     protected
 
-    def use_interceptor
+    def interceptor_enabled
       false
     end
 
-    def use_interceptor=(arg)
+    def interceptor_enabled=(arg)
       false
     end
 

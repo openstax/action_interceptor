@@ -5,11 +5,11 @@ module ActionInterceptor
 
     it 'modifies ActionMailer::Base' do
       mailer = ::ActionMailer::Base.send(:new)
-      expect(mailer.respond_to?(:use_interceptor, true)).to eq(true)
-      expect(mailer.respond_to?(:use_interceptor=, true)).to eq(true)
+      expect(mailer.respond_to?(:interceptor_enabled, true)).to eq(true)
+      expect(mailer.respond_to?(:interceptor_enabled=, true)).to eq(true)
 
-      expect(mailer.send(:use_interceptor)).to eq(false)
-      expect(mailer.send(:use_interceptor=, true)).to eq(false)
+      expect(mailer.send(:interceptor_enabled)).to eq(false)
+      expect(mailer.send(:interceptor_enabled=, true)).to eq(false)
     end
 
   end

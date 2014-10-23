@@ -9,9 +9,9 @@ module ActionInterceptor
 
     def url_for_with_interceptor(options = {})
       url = url_for_without_interceptor(options)
-      return url unless use_interceptor
+      return url unless interceptor_enabled
 
-      @interceptor_url_for_hash ||= is_interceptor ? \
+      @interceptor_url_for_hash ||= is_interceptor? ? \
                                     intercepted_url_hash : \
                                     current_url_hash
 
@@ -26,12 +26,12 @@ module ActionInterceptor
 
     # Executes the given block as if it was inside an interceptor
     def with_interceptor(&block)
-      previous_use_interceptor = use_interceptor
+      previous_interceptor_enabled = interceptor_enabled
 
       begin
         # Send the referer with intercepted requests
         # So we don't rely on the user's browser to do it for us
-        self.use_interceptor = true
+        self.interceptor_enabled = true
 
         # Execute the block as if it was defined in this controller
         instance_exec &block
@@ -40,18 +40,18 @@ module ActionInterceptor
         # and return the given value
         e.exit_value
       ensure
-        self.use_interceptor = previous_use_interceptor
+        self.interceptor_enabled = previous_interceptor_enabled
       end
     end
 
     # Executes the given block as if it was not inside an interceptor
     def without_interceptor(&block)
-      previous_use_interceptor = use_interceptor
+      previous_interceptor_enabled = interceptor_enabled
 
       begin
         # Send the referer with intercepted requests
         # So we don't rely on the user's browser to do it for us
-        self.use_interceptor = false
+        self.interceptor_enabled = false
 
         # Execute the block as if it was defined in this controller
         instance_exec &block
@@ -60,7 +60,7 @@ module ActionInterceptor
         # and return the given value
         e.exit_value
       ensure
-        self.use_interceptor = previous_use_interceptor
+        self.interceptor_enabled = previous_interceptor_enabled
       end
     end
 
