@@ -13,19 +13,18 @@ module ActionInterceptor
 
       base.before_filter :interceptor_setup
 
-      base.helper_method :_compute_redirect_to_location,
-                         :interceptor_enabled, :interceptor_enabled=,
+      base.helper_method :interceptor_enabled, :interceptor_enabled=,
                          :is_interceptor?, :current_page?,
                          :current_url, :current_url_hash, 
 
       base.extend(ClassMethods)
     end
 
-    protected
-
     def _compute_redirect_to_location(*args, &block)
       url_for(super(*args, &block))
     end
+
+    protected
 
     def is_interceptor?
       !interceptor_config.nil?
@@ -140,7 +139,8 @@ module ActionInterceptor
             # Session is a signed plaintext in Rails 3
             # In Rails 4, it is encrypted by default
             session[:interceptor] = session_hash.merge(
-              key => @intercepted_url) unless interceptor_config[:skip_session]
+              key => @intercepted_url
+            ) unless interceptor_config[:skip_session]
 
             @intercepted_url
           end
