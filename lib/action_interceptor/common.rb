@@ -16,8 +16,9 @@ module ActionInterceptor
                                     current_url_hash
 
       uri = URI(url)
-      new_query = Hash[URI.decode_www_form(uri.query || '')]
-                    .merge(@interceptor_url_for_hash)
+      new_query = HashWithIndifferentAccess[
+                    URI.decode_www_form(uri.query || '')
+                  ].merge(@interceptor_url_for_hash)
       uri.query = URI.encode_www_form(new_query)
       uri.to_s
     end
