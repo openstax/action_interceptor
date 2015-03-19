@@ -16,6 +16,10 @@ module ActionInterceptor
         @referer
       end
 
+      def unset(key)
+        false
+      end
+
     end
   end
 end

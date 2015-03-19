@@ -16,6 +16,10 @@ module ActionInterceptor
         @session[key]
       end
 
+      def unset(key)
+        @session.delete(key)
+      end
+
     end
   end
 end
