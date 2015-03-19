@@ -9,8 +9,8 @@ Gem::Specification.new do |s|
   s.email       = ['dms3@rice.edu']
   s.homepage    = 'http://github.com/openstax/action_interceptor'
   s.license     = 'MIT'
-  s.summary     = "Handles storage of user-specific strings, such as return url's, across multiple requests"
-  s.description = "Action Interceptor provides methods to store user-specific strings across multiple requests. Useful for storing return url's during authentication, registration, signing terms of use, etc. Convenience controller methods to store and retrieve url's are also provided."
+  s.summary     = "Handles storage of return url's across multiple requests"
+  s.description = "Action Interceptor provides methods to store return url's across multiple requests. Useful during authentication, registration, signing terms of use, etc."
 
   s.files = Dir["{config,lib}/**/*"] + ['MIT-LICENSE', 'Rakefile', 'README.md']
   s.test_files = Dir['spec/**/*']
