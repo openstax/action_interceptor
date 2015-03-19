@@ -1,6 +1,4 @@
-require 'action_interceptor/common'
-require 'action_interceptor/action_controller'
-require 'action_interceptor/action_mailer'
+require 'action_interceptor/action_controller/base'
 
 module ActionInterceptor
   class Engine < ::Rails::Engine

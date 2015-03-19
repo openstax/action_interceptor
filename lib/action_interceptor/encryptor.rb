@@ -18,12 +18,10 @@ module ActionInterceptor
       config = application.config
       application_secret = application.secrets[:secret_key_base] \
                              if application.respond_to?(:secrets)
-      application_secret ||= config.secret_key_base if config.respond_to?(:secret_key_base)
+      application_secret ||= config.secret_key_base \
+                               if config.respond_to?(:secret_key_base)
       application_secret ||= config.secret_token
 
-      # This is how Rails 4 generates keys for encrypted cookies
-      # Except that, in Rails 4, MessageEncryptor can take 2 different secrets,
-      # one for encryption and one for verification
       salt = 'encrypted intercepted url'
       secret = OpenSSL::PKCS5.pbkdf2_hmac_sha1(
                  application_secret, salt, 2**16, 64)

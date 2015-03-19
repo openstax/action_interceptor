@@ -1,29 +1,17 @@
 require 'action_interceptor/engine'
+require 'action_interceptor/configuration'
+require 'action_interceptor/strategies'
+require 'action_interceptor/strategies/session'
+require 'action_interceptor/strategies/referer'
 
 module ActionInterceptor
 
-  DEFAULT_CONFIG = {}
-
-  INTERCEPTOR_ATTRIBUTES = [:intercepted_url_key,
-                            :override_url_options,
-                            :skip_session]
-
-  INTERCEPTOR_ATTRIBUTES.each do |attribute|
-    define_singleton_method(attribute) do |value|
-      DEFAULT_CONFIG[attribute] = value
-    end
-  end
-
-  def self.interceptors
-    @interceptors ||= {}
-  end
-
-  def self.interceptor(interceptor_name, &block)
-    interceptors.merge!({interceptor_name => block})
+  def self.config
+    @config ||= Configuration.new
   end
 
   def self.configure(&block)
-    instance_exec &block
+    yield config
   end
 
 end
