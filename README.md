@@ -4,11 +4,11 @@
 [![Build Status](https://travis-ci.org/openstax/action_interceptor.svg?branch=master)](https://travis-ci.org/openstax/action_interceptor)
 [![Code Climate](https://codeclimate.com/github/openstax/action_interceptor.png)](https://codeclimate.com/github/openstax/action_interceptor)
 
-Action Interceptor is a Rails engine that makes it easy to have controllers intercept
-actions from other controllers, have users perform a task and then return them to where
-they were when the interception happened.
+Action Interceptor is a Rails engine that makes it easy to store and
+retrieve return url's across multiple requests and different controllers.
 
-This can be used, for example, for registration, authentication, signing terms of use, etc.
+This can be used, for example, for registration, authentication,
+signing terms of use, etc.
 
 ## Installation
 
@@ -33,121 +33,44 @@ $ rake action_interceptor:install
 
 In case Action Interceptor is completely unable to determine which page a user
 came from (should rarely happen if properly configured), it will send the user
-to your application or gem's root (the '/' path).
+to your application's root url.
 
 ## Usage
 
-Interceptors are blocks of code that are declared in Action Interceptor's
-initializer. They execute in the context of your controllers and work
-very much like before_filters.
+Before your before_filter or controller redirects the user to the
+login/registration/terms of use page, call `store_url`
+to store the current url.
 
-For example, the following interceptor could be used to ensure that users
-have filled out a registration form:
+In the login/registration/terms of use page, call `store_fallback`
+to store the http referer, in case the user reached that page
+through an unexpected path.
 
-```rb
-interceptor :registration do
+When the user is done with their task, call `redirect_back`
+to send them back to where they were before.
 
-  return if current_user.try(:is_registered?)
-
-  respond_to do |format|
-    format.html { redirect_to register_path }
-    format.json { head(:forbidden) }
-  end
-
-end
-```
-
-What makes interceptors different from before_filters is that they will
-save the user's current url before redirecting. This is done through
-signed url params by default, falling back to session variables if those
-params are absent or invalid.
-
-Once declared, you can use an interceptor in any controller. For example,
-you might want to ensure that all logged in users have to complete
-a form before using your site. In that case, you could add the following
-to your `ApplicationController`:
-
-```rb
-class ApplicationController < ActionController::Base
-
-  interceptor :registration
-
-end
-```
-
-The controllers your interceptors redirect to should
-call the `acts_as_interceptor` method:
-
-```rb
-class RegistrationsController < ApplicationController
-
-  acts_as_interceptor
-
-  skip_interceptor :registration, only: [:new, :create]
-
-end
-```
-
-As shown above, interceptions work like before_filters and
-can be skipped using the skip_interceptor method.
+All of those methods can also take an options hash,
+where you can pass a `:key` argument.
+If your site uses multiple different redirects, you can specify
+a different `:key` for each in order to have them not overwrite each other.
 
 Just by including the gem in your app, the following convenience methods
 will also be added to all controllers as helper methods, so they will also
-be available in views: `current_page?(url)`, `current_url`, `current_url_hash`,
-`with_interceptor(&block)` and `without_interceptor(&block)`.
+be available in views: `current_page?(url)`, `current_url` and `stored_url`.
 
-- `with_interceptor(&block)` executes the given block:
-  - Adding the intercepted URL param to all links and redirects
-  - As if it was declared in the context of `self`
-- `without_interceptor(&block)` executes the given block:
-  - With the default URL params for all links and redirects
-  - As if it was declared in the context of `self`
-
-- `current_url_hash` returns a hash containing the `intercepted_url_key` and the
-  `current_url`, signed and encrypted.
-
-- And the following methods, backported from Rails 4:
   - `current_url` returns the current url.
   - `current_page?(url)` returns true iif the given url is the `current_url`.
+  - `stored_url` returns the stored url.
 
-When called, the `acts_as_interceptor` method will ensure the following:
+The following convenience methods are also added to controllers:
+`store_url`, `store_fallback`, `delete_stored_url` and `redirect_back`.
+These methods have the following behavior:
 
-- The `url_options` method for that controller will be overriden, causing all
-  links and redirects for the controller and associated views to include
-  the signed return url. This behavior can be skipped by passing
-  `:override_url_options => false` to the `acts_as_interceptor` call,
-  like so: `acts_as_interceptor :override_url_options => false`.
-  In that case, you are responsible for wrapping any internal links and
-  redirects in `with_interceptor` blocks.
-
-- The following convenience methods will be added to the controller:
-  `redirect_back(options = {})`, `intercepted_url`,
-  `intercepted_url=` and `intercepted_url_hash`.
-  These methods have the following behavior:
-
-  - redirect_back(options = {}) redirects the user back to where the
-    interception occurred, passing the given options to the redirect method.
-
-  - `intercepted_url` returns the intercepted url. Can be used in views to make
-    links that redirect the user back to where the interception happened.
-
-  - `intercepted_url=` can be used to overwrite the intercepted url, if needed.
-
-  - `intercepted_url_hash` returns a hash containing the `interceptor_url_key`
-    and the signed `intercepted_url`.
-
-When users complete the given task, use the following method to
-redirect them back to where the interception occurred:
-
-```rb
-redirect_back
-```
-
-Alternatively, you can use `intercepted_url` in views:
-
-```erb
-<%= link_to 'Back', intercepted_url %>
-```
+  - `store_url` stores the current url
+    (or specify the url using the `:url` option).
+  - `store_fallback` stores the http referer only if no stored url
+    is already present (or specify the fallback url using `:url` option).
+  - `delete_stored_url` deletes the stored url.
+  - `redirect_back` redirects the user to the stored url and deletes it.
 
 ## Contributing
 
