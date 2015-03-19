@@ -10,7 +10,14 @@ module ActionInterceptor
 
       def current_page?(url)
         # Return true for blank (blank links redirect to the same page)
-        url.blank? || URI(url).path == request.path
+        return true if url.blank?
+
+        uri = URI(url)
+        uri.path == request.path && (
+          uri.relative? || (
+            uri.host == request.host && uri.port == request.port
+          )
+        )
       end
 
       def current_url

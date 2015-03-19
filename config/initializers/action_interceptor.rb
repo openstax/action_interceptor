@@ -5,9 +5,9 @@ ActionInterceptor.configure do |config|
   # When storing a url, all strategies will be used.
   # When attempting to retrieve stored url's, strategies will be called
   # in order until one of them returns a non-blank string.
-  # Available strategies: :session, :referer
-  # Default: [ :session, :referer ]
-  config.default_strategies = [ :session, :referer ]
+  # Available strategies: :session
+  # Default: [ :session ]
+  config.default_strategies = [ :session ]
 
   # default_url
   # Type: String

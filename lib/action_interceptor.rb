@@ -2,7 +2,6 @@ require 'action_interceptor/engine'
 require 'action_interceptor/configuration'
 require 'action_interceptor/strategies'
 require 'action_interceptor/strategies/session'
-require 'action_interceptor/strategies/referer'
 
 module ActionInterceptor
 
