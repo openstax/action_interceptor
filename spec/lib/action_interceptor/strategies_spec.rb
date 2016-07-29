@@ -7,15 +7,15 @@ module ActionInterceptor
     let!(:controller) { ::ActionController::Base.new }
 
     it 'registers and instantiates storage strategies' do
-      ActionInterceptor::Strategies.register(:dummy, ::Strategies::Dummy)
-      strategy = ActionInterceptor::Strategies.find(controller, :dummy)
+      described_class.register(:dummy, ::Strategies::Dummy)
+      strategy = described_class.find(controller, :dummy)
       expect(strategy).to be_a ::Strategies::Dummy
       expect(strategy.controller).to eq controller
 
-      strategies = ActionInterceptor::Strategies.find_all(controller, [:dummy])
-      strategies.each do |strategy|
-        expect(strategy).to be_a ::Strategies::Dummy
-        expect(strategy.controller).to eq controller
+      strategies = described_class.find_all(controller, [:dummy])
+      strategies.each do |strat|
+        expect(strat).to be_a ::Strategies::Dummy
+        expect(strat.controller).to eq controller
       end
     end
 

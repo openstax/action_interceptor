@@ -3,7 +3,7 @@ require 'spec_helper'
 module ActionInterceptor
   describe Configuration do
 
-    let!(:config) { Configuration.new }
+    let!(:config) { described_class.new }
 
     it 'stores configuration options' do
       expect(config.default_url).to be_nil
