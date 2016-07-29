@@ -25,24 +25,22 @@ module ActionInterceptor
       end
 
       # Stores the given url or the current url
+      # If the current request is not a GET request, stores the referer instead
       def store_url(options = {})
-        strats = ActionInterceptor::Strategies.find_all(self,
-                                                        options[:strategies])
+        strats = ActionInterceptor::Strategies.find_all(self, options[:strategies])
         key = options[:key] || ActionInterceptor.config.default_key
 
-        url = options.has_key?(:url) ? options[:url] : current_url
+        url = options.has_key?(:url) ?
+                options[:url] : (request.get? ? current_url : request.referer)
 
-        strats.each do |strat|
-          strat.set(key, url)
-        end
+        strats.each{ |strat| strat.set(key, url) }
 
         url
       end
 
       # Retrieves the stored url
       def stored_url(options = {})
-        strats = ActionInterceptor::Strategies.find_all(self,
-                                                        options[:strategies])
+        strats = ActionInterceptor::Strategies.find_all(self, options[:strategies])
         key = options[:key] || ActionInterceptor.config.default_key
 
         strats.each do |strat|
@@ -61,8 +59,7 @@ module ActionInterceptor
 
       # Deletes to the stored url
       def delete_stored_url(options = {})
-        strats = ActionInterceptor::Strategies.find_all(self,
-                                                        options[:strategies])
+        strats = ActionInterceptor::Strategies.find_all(self, options[:strategies])
         key = options[:key] || ActionInterceptor.config.default_key
 
         strats.each do |strat|
@@ -81,8 +78,7 @@ module ActionInterceptor
         delete_stored_url(interceptor_options)
 
         # Prevent self redirects
-        url = (ActionInterceptor.config.default_url || main_app.root_url) \
-                if current_page?(url)
+        url = (ActionInterceptor.config.default_url || main_app.root_url) if current_page?(url)
 
         redirect_to url, redirect_options
       end

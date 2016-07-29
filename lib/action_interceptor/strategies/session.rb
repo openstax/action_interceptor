@@ -24,5 +24,4 @@ module ActionInterceptor
   end
 end
 
-ActionInterceptor::Strategies.register(:session,
-                                       ActionInterceptor::Strategies::Session)
+ActionInterceptor::Strategies.register(:session, ActionInterceptor::Strategies::Session)
