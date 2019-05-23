@@ -2,18 +2,18 @@ require 'spec_helper'
 
 module ActionInterceptor
   module ActionController
-    describe Base do
+    RSpec.describe Base, type: :lib do
 
-      let!(:request)    {
-        r = ::ActionController::TestRequest.new(host: 'http://test.me')
-        r.env['HTTP_REFERER'] = 'http://refer.er'
-        r
-      }
-      let!(:controller) {
-        c = ::ActionController::Base.new
-        c.request = request
-        c
-      }
+      let!(:request)    do
+        ::ActionController::TestRequest.new(
+          { 'REQUEST_METHOD' => 'GET', 'HTTP_REFERER' => 'http://refer.er' },
+          {},
+          ::ActionController::Base
+        ).tap { |request| request.host = 'test.me' }
+      end
+      let!(:controller) do
+        ::ActionController::Base.new.tap { |controller| controller.request = request }
+      end
 
       it 'modifies ActionController::Base' do
         expect(controller.respond_to?(:current_page?, true)).to eq true

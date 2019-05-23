@@ -2,16 +2,16 @@ require 'spec_helper'
 
 module ActionInterceptor
   module Strategies
-    describe Session do
+    RSpec.describe Session, type: :lib do
 
-      let!(:request)    {
-        ::ActionController::TestRequest.new(:host => 'http://test.me')
-      }
-      let!(:controller) {
-        c = ::ActionController::Base.new
-        c.request = request
-        c
-      }
+      let!(:request)    do
+        ::ActionController::TestRequest.new({}, {}, ::ActionController::Base).tap do |request|
+          request.host = 'test.me'
+        end
+      end
+      let!(:controller) do
+        ::ActionController::Base.new.tap { |controller| controller.request = request }
+      end
       let!(:strategy)   { Session.new(controller) }
       let!(:key)        { :key }
       let!(:string)     { 'string' }
