@@ -37,7 +37,7 @@ to your application's root url.
 
 ## Usage
 
-Before your before_filter or controller redirects the user to the
+Before your before_action or controller redirects the user to the
 login/registration/terms of use page, call `store_url`
 to store the current url.
 
