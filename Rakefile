@@ -18,4 +18,4 @@ Rake::TestTask.new(:spec) do |t|
   t.verbose = false
 end
 
-task :default => :spec
+task default: :spec
