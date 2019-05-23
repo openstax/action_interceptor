@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'dummy/lib/strategies/dummy'
 
 module ActionInterceptor
-  describe Strategies do
+  RSpec.describe Strategies, type: :lib do
 
     let!(:controller) { ::ActionController::Base.new }
 

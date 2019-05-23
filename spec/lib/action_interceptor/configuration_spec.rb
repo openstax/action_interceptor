@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module ActionInterceptor
-  describe Configuration do
+  RSpec.describe Configuration, type: :lib do
 
     let!(:config) { described_class.new }
 
