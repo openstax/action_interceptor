@@ -16,10 +16,11 @@ module ActionInterceptor
 
         uri = Addressable::URI.parse(url)
         uri.path == request.path && (
-          uri.relative? || (
+          uri.relative? || uri.host == request.host_with_port || (
             uri.host == request.host && uri.port == request.port
           )
         )
+
       end
 
       def current_url
