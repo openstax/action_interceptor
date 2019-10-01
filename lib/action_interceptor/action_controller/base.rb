@@ -1,3 +1,5 @@
+require 'addressable/uri'
+
 module ActionInterceptor
   module ActionController
     module Base
@@ -12,7 +14,7 @@ module ActionInterceptor
         # Return true for blank (blank links redirect to the same page)
         return true if url.blank?
 
-        uri = URI(url)
+        uri = Addressable::URI.parse(url)
         uri.path == request.path && (
           uri.relative? || (
             uri.host == request.host && uri.port == request.port
