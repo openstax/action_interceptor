@@ -90,4 +90,6 @@ module ActionInterceptor
   end
 end
 
-ActionController::Base.send :include, ActionInterceptor::ActionController::Base
+ActiveSupport.on_load(:action_controller_base) do
+  ActionController::Base.send :include, ActionInterceptor::ActionController::Base
+end
